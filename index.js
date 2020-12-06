@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-
+const morgan = require("morgan");
 let persons = [
   {
     name: "Arto Artas",
@@ -25,7 +25,9 @@ let persons = [
 ];
 
 app.use(express.json());
-
+app.use(
+  morgan(":method :url :status :res[content-length] - :response-time ms :log")
+);
 app.get("/", (req, res) => {
   res.send("<h1>Hello World!</h1>");
 });
@@ -73,10 +75,10 @@ app.post("/api/persons", (req, res) => {
     });
   }
 
-  if(persons.map(person => person.name === body.name)){
+  if (persons.filter((person) => person.name === body.name).length > 0) {
     return res.status(400).json({
-      error:"name must be unique"
-    })
+      error: "name must be unique",
+    });
   }
 
   const person = {
@@ -94,6 +96,10 @@ app.delete("/api/persons/:id", (req, res) => {
   persons = persons.filter((person) => person.id !== id);
 
   res.status(204).end();
+});
+
+morgan.token("log", function (req, res) {
+  return JSON.stringify(req.body);
 });
 
 const PORT = 3001;
