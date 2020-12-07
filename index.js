@@ -42,7 +42,7 @@ app.get("/api/persons/:id", (req, res,next) => {
     .catch((error) => next(error));
 });
 
-app.post("/api/persons", (req, res) => {
+app.post("/api/persons", (req, res,next) => {
   const body = req.body;
 
   if (!body.name) {
@@ -67,11 +67,7 @@ app.post("/api/persons", (req, res) => {
     .then((savedPerson) => {
       res.json(savedPerson);
     })
-    .catch((error) => {
-      res.status(500).json({
-        error: "name must be unique",
-      });
-    });
+    .catch(error => next(error));
 });
 
 app.put("/api/persons/:id",(req,res,next) => {
@@ -107,11 +103,14 @@ const unknownEndpoint = (request, response) => {
 app.use(unknownEndpoint);
 
 const errorHandler = (error, request, response, next) => {
-  console.error(error.message);
 
   if (error.name === "CastError" && error.kind == "ObjectId") {
     return response.status(400).send({ error: "id doesn't exist" });
   }
+  else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
+  }
+
   next(error)
 };
 
