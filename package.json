@@ -17,9 +17,12 @@
     "express": "^4.17.1",
     "mongoose": "^5.11.4",
     "mongoose-unique-validator": "^2.0.3",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "lint": "eslint ."
+
   },
   "devDependencies": {
+    "eslint": "^7.15.0",
     "nodemon": "^2.0.6"
   }
 }
