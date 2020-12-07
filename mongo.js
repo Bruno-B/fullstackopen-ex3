@@ -36,7 +36,6 @@ if (process.argv.length === 3) {
   });
 
   person.save().then((res) => {
-    console.log("person saved!");
     mongoose.connection.close();
   });
 }
