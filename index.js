@@ -1,30 +1,10 @@
+require("dotenv").config();
 const express = require("express");
 const app = express();
 const morgan = require("morgan");
 const cors = require("cors");
-let persons = [
-  {
-    name: "Arto Artas",
-    number: "3213123-232",
-    id: 1,
-  },
-  {
-    name: "Barto Bartas",
-    number: "2123332-122",
-    id: 2,
-  },
-  {
-    name: "Carto Cartas",
-    number: "232321-123",
-    id: 3,
-  },
-  {
-    name: "Darto Dartas",
-    number: "3123123-213",
-    id: 4,
-  },
-];
-
+const Person = require("./models/person");
+const { response } = require("express");
 app.use(express.static("build"));
 app.use(cors());
 app.use(express.json());
@@ -36,7 +16,9 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/persons", (req, res) => {
-  res.json(persons);
+  Person.find({}).then((persons) => {
+    res.json(persons);
+  });
 });
 
 app.get("/info", (req, res) => {
@@ -48,20 +30,10 @@ app.get("/info", (req, res) => {
 });
 
 app.get("/api/persons/:id", (req, res) => {
-  const id = Number(req.params.id);
-  const person = persons.find((person) => person.id === id);
-
-  if (person) {
+  Person.findById(req.params.id).then((person) => {
     res.json(person);
-  } else {
-    res.status(404).end();
-  }
+  });
 });
-
-const generateId = () => {
-  const id = Math.floor(Math.random() * 999999);
-  return id;
-};
 
 app.post("/api/persons", (req, res) => {
   const body = req.body;
@@ -78,21 +50,21 @@ app.post("/api/persons", (req, res) => {
     });
   }
 
-  if (persons.filter((person) => person.name === body.name).length > 0) {
-    return res.status(400).json({
-      error: "name must be unique",
-    });
-  }
-
-  const person = {
+  const person = new Person({
     name: body.name,
     number: body.number,
-    id: generateId(),
-  };
+  });
 
-  persons = persons.concat(person);
-
-  res.json(person);
+  person
+    .save()
+    .then((savedPerson) => {
+      res.json(savedPerson);
+    })
+    .catch((err) => {
+      res.status(500).json({
+        error: "name must be unique",
+      });
+    });
 });
 app.delete("/api/persons/:id", (req, res) => {
   const id = Number(req.params.id);
@@ -104,7 +76,7 @@ morgan.token("log", function (req, res) {
   return JSON.stringify(req.body);
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
