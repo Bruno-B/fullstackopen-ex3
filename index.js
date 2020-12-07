@@ -6,11 +6,12 @@ const cors = require("cors");
 const Person = require("./models/person");
 const { response } = require("express");
 app.use(express.static("build"));
-app.use(cors());
 app.use(express.json());
+app.use(cors());
 app.use(
   morgan(":method :url :status :res[content-length] - :response-time ms :log")
 );
+
 app.get("/", (req, res) => {
   res.send("<h1>Hello World!</h1>");
 });
@@ -24,15 +25,21 @@ app.get("/api/persons", (req, res) => {
 app.get("/info", (req, res) => {
   const date = Date(Date.now());
   res.send(`<p>Phonebook has info for ${persons.length} people</p>
-    ${date}`);
+  ${date}`);
 
   res.status(204).end();
 });
 
-app.get("/api/persons/:id", (req, res) => {
-  Person.findById(req.params.id).then((person) => {
-    res.json(person);
-  });
+app.get("/api/persons/:id", (req, res,next) => {
+  Person.findById(req.params.id)
+    .then((person) => {
+      if (person) {
+        response.json(person);
+      } else {
+        response.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
 });
 
 app.post("/api/persons", (req, res) => {
@@ -60,25 +67,40 @@ app.post("/api/persons", (req, res) => {
     .then((savedPerson) => {
       res.json(savedPerson);
     })
-    .catch((err) => {
+    .catch((error) => {
       res.status(500).json({
         error: "name must be unique",
       });
     });
 });
-app.delete("/api/persons/:id", (req, res) => {
-
+app.delete("/api/persons/:id", (req, res, next) => {
   Person.findByIdAndRemove(req.params.id)
-  .then(result => {
-    res.status(204).end()
-  })
-  .catch(err => next(error))
+    .then((result) => {
+      res.status(204).end();
+    })
+    .catch((error) => next(error));
 });
 
 morgan.token("log", function (req, res) {
   return JSON.stringify(req.body);
 });
 
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: "unknown endpoint" });
+};
+
+app.use(unknownEndpoint);
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError" && error.kind == "ObjectId") {
+    return response.status(400).send({ error: "id doesn't exist" });
+  }
+  next(error)
+};
+
+app.use(errorHandler);
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
