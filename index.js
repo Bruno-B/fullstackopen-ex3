@@ -24,19 +24,19 @@ app.get("/api/persons", (req, res) => {
 
 app.get("/info", (req, res) => {
   const date = Date(Date.now());
-  res.send(`<p>Phonebook has info for ${persons.length} people</p>
+  res.send(`<p>Phonebook has info for ${Person.length} people</p>
   ${date}`);
 
   res.status(204).end();
 });
 
-app.get("/api/persons/:id", (req, res,next) => {
+app.get("/api/persons/:id", (req, res, next) => {
   Person.findById(req.params.id)
     .then((person) => {
       if (person) {
-        response.json(person);
+        res.json(person);
       } else {
-        response.status(404).end();
+        res.status(404).end();
       }
     })
     .catch((error) => next(error));
@@ -73,6 +73,21 @@ app.post("/api/persons", (req, res) => {
       });
     });
 });
+
+app.put("/api/persons/:id", (req, res, next) => {
+  const body = req.body;
+  const person = {
+    name: body.name,
+    number: body.number,
+  };
+
+  Person.findByIdAndUpdate(req.params.id, person, { new: true })
+    .then((updatePerson) => {
+      res.json(updatePerson);
+    })
+    .catch((error) => next(error));
+});
+
 app.delete("/api/persons/:id", (req, res, next) => {
   Person.findByIdAndRemove(req.params.id)
     .then((result) => {
@@ -97,7 +112,7 @@ const errorHandler = (error, request, response, next) => {
   if (error.name === "CastError" && error.kind == "ObjectId") {
     return response.status(400).send({ error: "id doesn't exist" });
   }
-  next(error)
+  next(error);
 };
 
 app.use(errorHandler);
